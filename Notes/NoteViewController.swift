@@ -12,6 +12,7 @@ class NoteViewController: UIViewController {
         override func viewDidLoad() {
             super.viewDidLoad()
             
+            //Ком
             // Установка заголовка и текста заметки в соответствующие элементы интерфейса
             titleLabel.text = noteTitle
             noteLabel.text = note
