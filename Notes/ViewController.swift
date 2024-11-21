@@ -101,9 +101,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                     present(alert, animated: true)
                 }
             }
-
-            // MARK: - Методы UISearchBarDelegate
-
+// Rjv
             func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
                 // Фильтрация данных
                 filteredModels = searchText.isEmpty
