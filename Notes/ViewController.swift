@@ -6,6 +6,23 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     @IBOutlet var table:UITableView!
     @IBOutlet var label:UILabel!
     
+    
+    @IBAction func openChatGPT() {
+        guard let chatVC = storyboard?.instantiateViewController(identifier: "GPT") as? ChatViewController else {
+            return
+        }
+
+        chatVC.completion = { [weak self] response in
+            guard let self = self else { return }
+            // Обновляем данные или интерфейс
+            self.models.append((title: "GPT Ответ", note: response))
+            self.table.reloadData()
+        }
+
+
+        navigationController?.pushViewController(chatVC, animated: true)
+    }
+
     // Массив для хранения заметок, каждая заметка представлена парой "заголовок" и "содержание"
         var models: [(title: String, note: String)] = []
         var filteredModels: [(title: String, note: String)] = [] // Отфильтрованные данные для поиска
@@ -118,3 +135,4 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 searchBar.resignFirstResponder()
             }
         }
+

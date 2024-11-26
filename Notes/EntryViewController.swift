@@ -50,4 +50,6 @@ class EntryViewController: UIViewController {
                 present(alert, animated: true)
             }
         }
+    
+
     }
