@@ -15,6 +15,7 @@ class EntryViewController: UIViewController {
             // Установка фокуса на поле для ввода заголовка при загрузке экрана
             titleField.becomeFirstResponder()
             
+            
             // Добавление кнопки "Сохранить" в навигационную панель
             navigationItem.rightBarButtonItem = UIBarButtonItem(
                 title: "Сохранить",

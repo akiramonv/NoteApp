@@ -106,7 +106,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 // Фильтрация данных
                 filteredModels = searchText.isEmpty
                     ? []
-                    : models.filter { $0.title.lowercased().contains(searchText.lowercased()) }
+                    : models.filter { $0.title.lowercased().contains(searchText.lowercased()) || $0.note.lowercased().contains(searchText.lowercased()) }
                 table.reloadData()
             }
 
