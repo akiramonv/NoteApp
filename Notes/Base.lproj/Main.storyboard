@@ -23,7 +23,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <tableView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="b4C-Kq-J2B">
-                                <rect key="frame" x="9" y="159" width="378" height="693"/>
+                                <rect key="frame" x="9" y="155" width="378" height="697"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="cell" textLabel="wca-7K-9p7" detailTextLabel="HvN-F4-UI5" style="IBUITableViewCellStyleSubtitle" id="5gz-Jb-BhU">
@@ -60,7 +60,6 @@
                             <constraint firstItem="uVK-5i-wTV" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="JCf-hW-jQg"/>
                             <constraint firstItem="b4C-Kq-J2B" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="9" id="Kld-hk-wrR"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="b4C-Kq-J2B" secondAttribute="trailing" constant="6" id="Lsk-oc-qfJ"/>
-                            <constraint firstItem="b4C-Kq-J2B" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="4" id="NBR-e5-vHd"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="b4C-Kq-J2B" secondAttribute="trailing" constant="6" id="Rdi-lc-qjZ"/>
                             <constraint firstItem="b4C-Kq-J2B" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="9" id="UYh-B7-FJP"/>
                             <constraint firstItem="uVK-5i-wTV" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="kcJ-jy-AKs"/>
@@ -68,11 +67,24 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="Блокнот" id="z3h-B2-y1V">
-                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="1Vz-eJ-o18">
-                            <connections>
-                                <action selector="didTapNewNote" destination="BYZ-38-t0r" id="3ed-TC-wKa"/>
-                            </connections>
-                        </barButtonItem>
+                        <rightBarButtonItems>
+                            <barButtonItem systemItem="add" id="1Vz-eJ-o18">
+                                <connections>
+                                    <action selector="didTapNewNote" destination="BYZ-38-t0r" id="3ed-TC-wKa"/>
+                                </connections>
+                            </barButtonItem>
+                            <barButtonItem title="GPT" style="plain" id="Kub-pu-sLM">
+                                <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="yUZ-hA-XdA">
+                                    <rect key="frame" x="248" y="4.6666666666666679" width="87" height="35"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    <state key="normal" title="Button"/>
+                                    <buttonConfiguration key="configuration" style="plain" title="GPT"/>
+                                    <connections>
+                                        <action selector="openChatGPT" destination="BYZ-38-t0r" eventType="touchUpInside" id="0BZ-9c-tw3"/>
+                                    </connections>
+                                </button>
+                            </barButtonItem>
+                        </rightBarButtonItems>
                     </navigationItem>
                     <connections>
                         <outlet property="label" destination="uVK-5i-wTV" id="px1-2U-92v"/>
@@ -191,6 +203,62 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="VNJ-Ss-fNr" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="2480" y="4"/>
+        </scene>
+        <!--Chat View Controller-->
+        <scene sceneID="oHX-Tf-W65">
+            <objects>
+                <viewController storyboardIdentifier="GPT" id="fyw-kP-jRo" customClass="ChatViewController" customModule="Notes" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="KjS-D0-xnj">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="hmy-qi-XpE">
+                                <rect key="frame" x="10" y="69" width="373" height="52"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="52" id="ntV-lB-wwS"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                            </textField>
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="EoQ-xl-1Lc">
+                                <rect key="frame" x="10" y="131" width="373" height="677"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <color key="textColor" systemColor="labelColor"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                            </textView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="V4n-IX-L9w">
+                                <rect key="frame" x="263" y="763" width="110" height="35"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" title="Отправить"/>
+                                <connections>
+                                    <action selector="sendButtonTapped" destination="fyw-kP-jRo" eventType="touchUpInside" id="pCG-HJ-5Fq"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="cGE-q4-pfs"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="cGE-q4-pfs" firstAttribute="trailing" secondItem="V4n-IX-L9w" secondAttribute="trailing" constant="20" id="92V-BZ-tUM"/>
+                            <constraint firstItem="cGE-q4-pfs" firstAttribute="bottom" secondItem="EoQ-xl-1Lc" secondAttribute="bottom" constant="10" id="PP8-5c-zrk"/>
+                            <constraint firstItem="cGE-q4-pfs" firstAttribute="trailing" secondItem="hmy-qi-XpE" secondAttribute="trailing" constant="10" id="ZRb-6K-eLu"/>
+                            <constraint firstItem="EoQ-xl-1Lc" firstAttribute="leading" secondItem="cGE-q4-pfs" secondAttribute="leading" constant="10" id="aEC-3n-ov0"/>
+                            <constraint firstItem="hmy-qi-XpE" firstAttribute="leading" secondItem="cGE-q4-pfs" secondAttribute="leading" constant="10" id="evo-T1-B1o"/>
+                            <constraint firstItem="EoQ-xl-1Lc" firstAttribute="top" secondItem="hmy-qi-XpE" secondAttribute="bottom" constant="10" id="rfv-ih-shf"/>
+                            <constraint firstItem="cGE-q4-pfs" firstAttribute="trailing" secondItem="EoQ-xl-1Lc" secondAttribute="trailing" constant="10" id="sOX-9D-awx"/>
+                            <constraint firstItem="cGE-q4-pfs" firstAttribute="bottom" secondItem="V4n-IX-L9w" secondAttribute="bottom" constant="20" id="xlp-9V-qdn"/>
+                            <constraint firstItem="hmy-qi-XpE" firstAttribute="top" secondItem="cGE-q4-pfs" secondAttribute="top" constant="10" id="zK1-yL-TMi"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="chatHistoryTextView" destination="EoQ-xl-1Lc" id="zDu-2W-bRc"/>
+                        <outlet property="sendButton" destination="V4n-IX-L9w" id="qPE-fj-soT"/>
+                        <outlet property="userInputTextField" destination="hmy-qi-XpE" id="Lwh-55-fOo"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="oLz-Oc-VyX" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3228.2442748091603" y="3.5211267605633805"/>
         </scene>
     </scenes>
     <resources>
