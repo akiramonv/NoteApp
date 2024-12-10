@@ -71,7 +71,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
                 let model = filteredModels.isEmpty ? models[indexPath.row] : filteredModels[indexPath.row]
                 cell.textLabel?.text = model.title
-                cell.textLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+                cell.textLabel?.font = UIFont.boldSystemFont(ofSize: 20)
                 return cell
             }
 
