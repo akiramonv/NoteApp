@@ -5,16 +5,37 @@ class NoteViewController: UIViewController {
     @IBOutlet var titleLabel: UILabel!
     @IBOutlet var noteLabel: UITextView! 
 
-    // Переменные для хранения данных заметки (заголовка и текста)
-        public var noteTitle: String = "" // Заголовок заметки
-        public var note: String = "" // Текст заметки
+    public var noteTitle: String = ""
+        public var note: NSAttributedString? = nil
 
         override func viewDidLoad() {
             super.viewDidLoad()
             
-            //Ком
-            // Установка заголовка и текста заметки в соответствующие элементы интерфейса
             titleLabel.text = noteTitle
-            noteLabel.text = note
+            noteLabel.attributedText = note
+            
+            navigationItem.rightBarButtonItem = UIBarButtonItem(
+                title: "Edit",
+                style: .plain,
+                target: self,
+                action: #selector(editNote)
+            )
+        }
+
+        @objc private func editNote() {
+            guard let vc = storyboard?.instantiateViewController(identifier: "new") as? EntryViewController else { return }
+            
+            vc.title = "Редактировать"
+            vc.noteTitle = noteTitle
+            vc.note = note
+            
+            vc.completion = { [weak self] updatedTitle, updatedNote in
+                self?.noteTitle = updatedTitle
+                self?.note = updatedNote
+                self?.titleLabel.text = updatedTitle
+                self?.noteLabel.attributedText = updatedNote
+            }
+            
+            navigationController?.pushViewController(vc, animated: true)
         }
     }
