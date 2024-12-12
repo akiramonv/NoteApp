@@ -83,7 +83,7 @@ class EntryViewController: UIViewController {
             colorButton.addTarget(self, action: #selector(changeTextColor), for: .touchUpInside)
 
             let stackView = UIStackView(arrangedSubviews: [boldButton, italicButton, underlineButton, fontButton, sizeButton, colorButton])
-            stackView.spacing = 10
+            stackView.spacing = 6
             stackView.distribution = .fillEqually
             stackView.translatesAutoresizingMaskIntoConstraints = false
             formattingToolbar.addSubview(stackView)

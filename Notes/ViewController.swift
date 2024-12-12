@@ -1,11 +1,14 @@
 
 import UIKit
+import FirebaseFirestore
+
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate{
 
     @IBOutlet var table:UITableView!
     @IBOutlet var label:UILabel!
     
+    let db = Firestore.firestore()
     
     @IBAction func openChatGPT() {
         guard let chatVC = storyboard?.instantiateViewController(identifier: "GPT") as? ChatViewController else { return }
@@ -42,12 +45,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
 
                title = "Блокнот"
                setupSearchBar()
-
-               loadNotesFromLocal()
+               loadNotesFromFirestore()
 
                label.text = "Нет заметок"
                label.isHidden = !models.isEmpty
                table.isHidden = models.isEmpty
+               
            }
 
            func setupSearchBar() {
@@ -107,6 +110,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                     alert.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { [weak self] _ in
                         guard let self = self else { return }
                         let index = self.filteredModels.isEmpty ? indexPath.row : self.models.firstIndex(where: { $0.title == self.filteredModels[indexPath.row].title })!
+                        let noteToDelete = self.models[index]
                         self.models.remove(at: index)
                         self.filteredModels.removeAll()
                         self.searchBar.text = ""
@@ -115,9 +119,19 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                             self.label.isHidden = false
                             self.table.isHidden = true
                         }
+
+                        // Удаление из Firestore
+                        self.db.collection("notes").document(noteToDelete.title).delete { error in
+                            if let error = error {
+                                print("Ошибка удаления: \(error)")
+                            } else {
+                                print("Заметка удалена из Firestore")
+                            }
+                        }
                     }))
                     present(alert, animated: true)
                 }
+
             }
 
             // MARK: - UISearchBarDelegate
@@ -148,8 +162,28 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                     ]
                 }
                 UserDefaults.standard.set(savedNotes, forKey: "savedNotes")
+                saveNotesToFirestore()
+                
             }
 
+    private func saveNotesToFirestore(){
+        for note in models{
+            let noteData:[String:Any] = [
+                "title":note.title,
+                "content":note.note.string,
+                "date":Timestamp(date: note.date)
+            ]
+            db.collection("notes").document(note.title).setData(noteData){error in
+                if let error = error {
+                    print("Ошибка сохранения: \(error)")
+                } else {
+                    print("Заметка сохранена")
+                }
+            }
+        }
+        
+    }
+    
             private func loadNotesFromLocal() {
                 guard let savedNotes = UserDefaults.standard.array(forKey: "savedNotes") as? [[String: Any]] else { return }
                 models = savedNotes.compactMap { noteDict in
@@ -161,7 +195,36 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 }
                 table.reloadData()
             }
+    
+    private func loadNotesFromFirestore() {
+        db.collection("notes").getDocuments { [weak self] snapshot, error in
+            guard let self = self else { return }
+            if let error = error {
+                print("Ошибка загрузки данных: \(error)")
+                return
+            }
+
+            guard let documents = snapshot?.documents else { return }
+            self.models = documents.compactMap { doc -> (title: String, note: NSAttributedString, date: Date)? in
+                guard
+                    let title = doc["title"] as? String,
+                    let content = doc["content"] as? String,
+                    let timestamp = doc["date"] as? Timestamp
+                else {
+                    return nil
+                }
+                return (title: title, note: NSAttributedString(string: content), date: timestamp.dateValue())
+            }
+            self.label.isHidden = !self.models.isEmpty
+            self.table.isHidden = self.models.isEmpty
+            self.table.reloadData()
         }
+    }
+
+    
+        }
+
+
 
         // MARK: - Extensions for NSAttributedString
 
