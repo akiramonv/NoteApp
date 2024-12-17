@@ -10,7 +10,7 @@ class ChatViewController: UIViewController {
 
         override func viewDidLoad() {
             super.viewDidLoad()
-            title = "Chat"
+            title = "Chat ответ"
             chatHistoryTextView.isEditable = false // Блокируем редактирование истории
         }
     

@@ -1,96 +1,110 @@
 
 import UIKit
+import FirebaseFirestore
+
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate{
 
     @IBOutlet var table:UITableView!
     @IBOutlet var label:UILabel!
     
+    let db = Firestore.firestore()
     
     @IBAction func openChatGPT() {
-        guard let chatVC = storyboard?.instantiateViewController(identifier: "GPT") as? ChatViewController else {
-            return
-        }
+        guard let chatVC = storyboard?.instantiateViewController(identifier: "GPT") as? ChatViewController else { return }
 
-        chatVC.completion = { [weak self] response in
-            guard let self = self else { return }
-            // Обновляем данные или интерфейс
-            self.models.append((title: "GPT Ответ", note: response))
-            self.table.reloadData()
-        }
+               chatVC.completion = { [weak self] response in
+                   guard let self = self else { return }
+                   let attributedResponse = NSAttributedString(string: response, attributes: [
+                       .font: UIFont.systemFont(ofSize: 16),
+                       .foregroundColor: UIColor.label
+                   ])
+                   
+                   let currentDate = Date()
+                   self.models.append((title: "GPT Ответ", note: attributedResponse, date: currentDate))
+                   self.table.reloadData()
+               }
 
+               navigationController?.pushViewController(chatVC, animated: true)
+           }
 
-        navigationController?.pushViewController(chatVC, animated: true)
-    }
+           var models: [(title: String, note: NSAttributedString, date: Date)] = [] {
+               didSet {
+                   saveNotesToLocal()
+                   saveNotesToFirestore()
+               }
+           }
+           var filteredModels: [(title: String, note: NSAttributedString, date: Date)] = []
+           let searchBar = UISearchBar()
 
-    // Массив для хранения заметок, каждая заметка представлена парой "заголовок" и "содержание"
-        var models: [(title: String, note: String)] = []
-        var filteredModels: [(title: String, note: String)] = [] // Отфильтрованные данные для поиска
+           override func viewDidLoad() {
+               super.viewDidLoad()
 
-        let searchBar = UISearchBar() // Элемент для ввода поискового запроса
+               table.delegate = self
+               table.dataSource = self
+               table.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
 
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            // Установка делегата и источника данных для таблицы
-            table.delegate = self
-            table.dataSource = self
-            
-            // Регистрация стандартной ячейки для таблицы
-            table.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-            
-            // Установка заголовка экрана
-            title = "Блокнот"
-            
-            setupSearchBar()
-        }
-        
-    // Настройка UISearchBar
-        func setupSearchBar() {
-            searchBar.delegate = self
-            searchBar.placeholder = "Поиск заметок"
-            navigationItem.titleView = searchBar // Устанавливаем поисковую строку в заголовок
-        }
-    
-    // Метод, вызываемый при нажатии на кнопку добавления новой записи
+               title = "Блокнот"
+               setupSearchBar()
+               loadNotesFromFirestore()
+
+               label.text = "Нет заметок"
+               label.isHidden = !models.isEmpty
+               table.isHidden = models.isEmpty
+               
+           }
+
+           func setupSearchBar() {
+               searchBar.delegate = self
+               searchBar.placeholder = "Поиск заметок"
+               navigationItem.titleView = searchBar
+           }
+
     @IBAction func didTapNewNote(){
-        // Переход к экрану добавления новой записи
-        guard let vc = storyboard?.instantiateViewController(identifier: "new") as? EntryViewController else {
-                    return
-                }
+        guard let vc = storyboard?.instantiateViewController(identifier: "new") as? EntryViewController else { return }
                 vc.title = "Новая запись"
-                vc.navigationItem.largeTitleDisplayMode = .never
-                
-                vc.completion = { noteTitle, note in
-                    self.navigationController?.popToRootViewController(animated: true)
-                    self.models.append((title: noteTitle, note: note))
+
+                vc.completion = { [weak self] noteTitle, note in
+                    guard let self = self else { return }
+                    let currentDate = Date()
+                    self.models.append((title: noteTitle, note: note, date: currentDate))
                     self.label.isHidden = true
                     self.table.isHidden = false
                     self.table.reloadData()
                 }
+
                 navigationController?.pushViewController(vc, animated: true)
             }
-
-            // MARK: - Методы UITableViewDataSource
 
             func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
                 return filteredModels.isEmpty ? models.count : filteredModels.count
             }
 
-            func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-                let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-                let model = filteredModels.isEmpty ? models[indexPath.row] : filteredModels[indexPath.row]
-                cell.textLabel?.text = model.title
-                cell.detailTextLabel?.text = model.note
-                return cell
-            }
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        let model = filteredModels.isEmpty ? models[indexPath.row] : filteredModels[indexPath.row]
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .short
+        let dateString = dateFormatter.string(from: model.date)
+
+        let attributedString = NSMutableAttributedString(attributedString: model.note)
+        attributedString.append(NSAttributedString(string: "\n\(dateString)", attributes: [
+            .font: UIFont.systemFont(ofSize: 12),
+            .foregroundColor: UIColor.gray
+        ]))
+        
+        cell.textLabel?.numberOfLines = 0 // Чтобы текст отображался полностью
+        cell.textLabel?.attributedText = attributedString
+        return cell
+    }
+
 
             func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
                 tableView.deselectRow(at: indexPath, animated: true)
                 let model = filteredModels.isEmpty ? models[indexPath.row] : filteredModels[indexPath.row]
-                guard let vc = storyboard?.instantiateViewController(identifier: "note") as? NoteViewController else {
-                    return
-                }
-                vc.navigationItem.largeTitleDisplayMode = .never
+                guard let vc = storyboard?.instantiateViewController(identifier: "note") as? NoteViewController else { return }
                 vc.title = "Запись"
                 vc.noteTitle = model.title
                 vc.note = model.note
@@ -100,11 +114,11 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
                 if editingStyle == .delete {
                     let alert = UIAlertController(title: "Удалить заметку", message: "Вы уверены, что хотите удалить эту заметку?", preferredStyle: .alert)
-                    
-                    alert.addAction(UIAlertAction(title: "Отмена", style: .cancel, handler: nil))
-                    
-                    alert.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { _ in
+                    alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+                    alert.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { [weak self] _ in
+                        guard let self = self else { return }
                         let index = self.filteredModels.isEmpty ? indexPath.row : self.models.firstIndex(where: { $0.title == self.filteredModels[indexPath.row].title })!
+                        let noteToDelete = self.models[index]
                         self.models.remove(at: index)
                         self.filteredModels.removeAll()
                         self.searchBar.text = ""
@@ -113,26 +127,127 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                             self.label.isHidden = false
                             self.table.isHidden = true
                         }
+
+                        // Удаление из Firestore
+                        self.db.collection("notes").document(noteToDelete.title).delete { error in
+                            if let error = error {
+                                print("Ошибка удаления: \(error)")
+                            } else {
+                                print("Заметка удалена из Firestore")
+                            }
+                        }
                     }))
-                    
                     present(alert, animated: true)
                 }
+
             }
-// Rjv
+
+            // MARK: - UISearchBarDelegate
+
             func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-                // Фильтрация данных
-                filteredModels = searchText.isEmpty
-                    ? []
-                    : models.filter { $0.title.lowercased().contains(searchText.lowercased()) || $0.note.lowercased().contains(searchText.lowercased()) }
+                filteredModels = searchText.isEmpty ? [] : models.filter {
+                    $0.title.lowercased().contains(searchText.lowercased()) ||
+                    $0.note.string.lowercased().contains(searchText.lowercased())
+                }
                 table.reloadData()
             }
 
             func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-                // Очистка поиска
                 searchBar.text = ""
                 filteredModels.removeAll()
                 table.reloadData()
                 searchBar.resignFirstResponder()
             }
+
+            // MARK: - Local Storage
+
+            private func saveNotesToLocal() {
+                let savedNotes = models.map { note -> [String: Any] in
+                    [
+                        "title": note.title,
+                        "content": note.note.encodeToData() ?? Data(),
+                        "date": note.date
+                    ]
+                }
+                UserDefaults.standard.set(savedNotes, forKey: "savedNotes")
+                saveNotesToFirestore()
+                
+            }
+
+    private func saveNotesToFirestore() {
+        for note in models {
+            let contentData = note.note.encodeToData()
+            guard let contentString = contentData?.base64EncodedString() else { continue }
+
+            let noteData: [String: Any] = [
+                "title": note.title,
+                "content": contentString,
+                "date": Timestamp(date: note.date)
+            ]
+            db.collection("notes").document(note.title).setData(noteData) { error in
+                if let error = error {
+                    print("Ошибка сохранения: \(error)")
+                } else {
+                    print("Заметка сохранена")
+                }
+            }
+        }
+    }
+
+    
+            private func loadNotesFromLocal() {
+                guard let savedNotes = UserDefaults.standard.array(forKey: "savedNotes") as? [[String: Any]] else { return }
+                models = savedNotes.compactMap { noteDict in
+                    guard let title = noteDict["title"] as? String,
+                          let contentData = noteDict["content"] as? Data,
+                          let content = NSAttributedString.decodeFromData(data: contentData),
+                          let date = noteDict["date"] as? Date else { return nil }
+                    return (title: title, note: content, date: date)
+                }
+                table.reloadData()
+            }
+    
+    private func loadNotesFromFirestore() {
+        db.collection("notes").getDocuments { [weak self] snapshot, error in
+            guard let self = self else { return }
+            if let error = error {
+                print("Ошибка загрузки данных: \(error)")
+                return
+            }
+
+            guard let documents = snapshot?.documents else { return }
+            self.models = documents.compactMap { doc -> (title: String, note: NSAttributedString, date: Date)? in
+                guard
+                    let title = doc["title"] as? String,
+                    let contentString = doc["content"] as? String,
+                    let contentData = Data(base64Encoded: contentString),
+                    let content = NSAttributedString.decodeFromData(data: contentData),
+                    let timestamp = doc["date"] as? Timestamp
+                else {
+                    return nil
+                }
+                return (title: title, note: content, date: timestamp.dateValue())
+            }
+            self.label.isHidden = !self.models.isEmpty
+            self.table.isHidden = self.models.isEmpty
+            self.table.reloadData()
+        }
+    }
+
+
+    
         }
 
+
+
+        // MARK: - Extensions for NSAttributedString
+
+        extension NSAttributedString {
+            func encodeToData() -> Data? {
+                try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false)
+            }
+
+            static func decodeFromData(data: Data) -> NSAttributedString? {
+                try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? NSAttributedString
+            }
+        }
