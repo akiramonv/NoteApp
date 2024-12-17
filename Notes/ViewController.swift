@@ -31,6 +31,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
            var models: [(title: String, note: NSAttributedString, date: Date)] = [] {
                didSet {
                    saveNotesToLocal()
+                   saveNotesToFirestore()
                }
            }
            var filteredModels: [(title: String, note: NSAttributedString, date: Date)] = []
@@ -79,19 +80,26 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 return filteredModels.isEmpty ? models.count : filteredModels.count
             }
 
-            func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-                let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-                let model = filteredModels.isEmpty ? models[indexPath.row] : filteredModels[indexPath.row]
-                
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateStyle = .short
-                dateFormatter.timeStyle = .short
-                let dateString = dateFormatter.string(from: model.date)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        let model = filteredModels.isEmpty ? models[indexPath.row] : filteredModels[indexPath.row]
 
-                cell.textLabel?.text = "\(model.title) (\(dateString))"
-                cell.textLabel?.font = UIFont.boldSystemFont(ofSize: 20)
-                return cell
-            }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .short
+        let dateString = dateFormatter.string(from: model.date)
+
+        let attributedString = NSMutableAttributedString(attributedString: model.note)
+        attributedString.append(NSAttributedString(string: "\n\(dateString)", attributes: [
+            .font: UIFont.systemFont(ofSize: 12),
+            .foregroundColor: UIColor.gray
+        ]))
+        
+        cell.textLabel?.numberOfLines = 0 // Чтобы текст отображался полностью
+        cell.textLabel?.attributedText = attributedString
+        return cell
+    }
+
 
             func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
                 tableView.deselectRow(at: indexPath, animated: true)
@@ -166,14 +174,17 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 
             }
 
-    private func saveNotesToFirestore(){
-        for note in models{
-            let noteData:[String:Any] = [
-                "title":note.title,
-                "content":note.note.string,
-                "date":Timestamp(date: note.date)
+    private func saveNotesToFirestore() {
+        for note in models {
+            let contentData = note.note.encodeToData()
+            guard let contentString = contentData?.base64EncodedString() else { continue }
+
+            let noteData: [String: Any] = [
+                "title": note.title,
+                "content": contentString,
+                "date": Timestamp(date: note.date)
             ]
-            db.collection("notes").document(note.title).setData(noteData){error in
+            db.collection("notes").document(note.title).setData(noteData) { error in
                 if let error = error {
                     print("Ошибка сохранения: \(error)")
                 } else {
@@ -181,8 +192,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 }
             }
         }
-        
     }
+
     
             private func loadNotesFromLocal() {
                 guard let savedNotes = UserDefaults.standard.array(forKey: "savedNotes") as? [[String: Any]] else { return }
@@ -208,18 +219,21 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             self.models = documents.compactMap { doc -> (title: String, note: NSAttributedString, date: Date)? in
                 guard
                     let title = doc["title"] as? String,
-                    let content = doc["content"] as? String,
+                    let contentString = doc["content"] as? String,
+                    let contentData = Data(base64Encoded: contentString),
+                    let content = NSAttributedString.decodeFromData(data: contentData),
                     let timestamp = doc["date"] as? Timestamp
                 else {
                     return nil
                 }
-                return (title: title, note: NSAttributedString(string: content), date: timestamp.dateValue())
+                return (title: title, note: content, date: timestamp.dateValue())
             }
             self.label.isHidden = !self.models.isEmpty
             self.table.isHidden = self.models.isEmpty
             self.table.reloadData()
         }
     }
+
 
     
         }
